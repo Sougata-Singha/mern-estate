@@ -39,7 +39,7 @@ const SingUp = () => {
   }
   return (
     <div className='p-3 max-w-lg mx-auto'>
-      <h1 className='text-center font-semibold text-3xl my-7 text-slate-600'>Sign Up</h1>
+      <h1 className='text-center font-semibold text-3xl my-7 text-slate-600'>SIGN UP</h1>
       <form className='flex flex-col gap-4'>
         <input type="text" className='border rounded-lg p-3 outline-none' placeholder='Username' id='username' required onChange={onChangeHandler}/>
         <input type="email" className='border rounded-lg p-3 outline-none' placeholder='Email' id='email' required onChange={onChangeHandler}/>
