@@ -1,13 +1,69 @@
-import React from 'react'
+import React,{useRef, useState, useEffect} from 'react'
 import { useSelector } from 'react-redux'
+import {getDownloadURL, getStorage, ref, uploadBytesResumable} from 'firebase/storage'
+import { app } from '../firebase'
 
 const Profile = () => {
+  const fileRef = useRef(null)
   const {currentUser} = useSelector(state => state.user )
+  const [file, setFile] = useState(undefined)
+  const [imagePerc, setImagePerc] = useState(0)
+  const [fileUploadError, setFileUploadError] = useState(false)
+  const [formData, setFormData] = useState({})
+  console.log(formData)
+
+  const handleUploadFile = (file) => {
+    const storage = getStorage(app)
+    const fileName = new Date().getTime() + file.name
+    const storageRef = ref(storage,fileName)
+    const uploadTask = uploadBytesResumable(storageRef,file)
+
+    uploadTask.on('state_changed', (snapshot) => {
+      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+      setImagePerc(Math.round(progress))
+    },(error) => {
+      setFileUploadError(true)
+    },() => {
+      getDownloadURL(uploadTask.snapshot.ref).then((downloadUrl) => {
+        setFormData({...formData,avatar : downloadUrl})
+      })
+    })
+    
+  }
+
+  useEffect(() => {
+    if(file){
+      handleUploadFile(file)
+    }
+    return () => {
+      setFile(undefined)
+      setImagePerc(0)
+    }
+    
+  },[file])
+
+
+  
+  
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
       <form className='flex flex-col gap-4'>
-        <img src={currentUser.avatar} alt="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" className='rounded-full w-24 h-24 object-cover cursor-pointer mt-2 self-center' />
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} ref={fileRef} hidden accept='image/*'/>
+        <img onClick={() => fileRef.current.click()} src={formData.avatar || currentUser.avatar} alt="profile" className='rounded-full w-24 h-24 object-cover cursor-pointer mt-2 self-center'/>
+        <p className='text-sm self-center'>
+          {fileUploadError ? (
+            <span className='text-red-700'>
+              Error Image upload (image must be less than 2 mb)
+            </span>
+          ) : imagePerc > 0 && imagePerc < 100 ? (
+            <span className='text-slate-700'>{`Uploading ${imagePerc}%`}</span>
+          ) : imagePerc === 100 ? (
+            <span className='text-green-700'>Image successfully uploaded!</span>
+          ) : (
+            ''
+          )}
+        </p>
         <input type="text" id='username' placeholder='Username' className='rounded-lg p-3 border '/>
         <input type="email" id='email' placeholder='Email' className='rounded-lg p-3 border '/>
         <input type="password" id='password' placeholder='Password' className='rounded-lg p-3 border '/>
